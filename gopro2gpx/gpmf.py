@@ -1,12 +1,11 @@
 #
-# 17/02/2019
-# Juan M. Casillas <juanm.casillas@gmail.com>
-# https://github.com/juanmcasillas/gopro2gpx.git
-#
+# 02/10/2022
+# Chris Auron  <chris.auron@gmail.com>
+# https://github.com/imaplt/gopro-highlights
 # Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
 #
-
 # based on the info from:
+#   https://github.com/juanmcasillas/gopro2gpx.git
 #   https://github.com/gopro/gpmf-parser
 #   https://docs.python.org/3/library/struct.html
 #   https://github.com/stilldavid/gopro-utils/blob/master/telemetry/reader.go
@@ -59,7 +58,7 @@ class Parser:
 
     def readFromBinary(self):
         """read data from binary file, instead extract the metadata track from video. Useful for quick development
-           -vv creates a dump file with the  binary data called dump_binary.raw
+           -vv creates a dump file with the binary data called dump_binary.raw
         """
         if not os.path.exists(self.file):
             raise FileNotFoundError("Can't open %s" % self.file)

@@ -1,6 +1,9 @@
 #
-# 17/02/2019 
-# Juan M. Casillas <juanm.casillas@gmail.com>
+# 02/10/2022
+# Chris Auron  <chris.auron@gmail.com>
+# https://github.com/imaplt/gopro-highlights
+#
+# Based on the info from:
 # https://github.com/juanmcasillas/gopro2gpx.git
 #
 # Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
@@ -10,6 +13,7 @@
 from datetime import datetime
 import time
 import os
+
 
 class GPSPoint:
     def __init__(self, latitude=0.0, longitude=0.0, elevation=0.0, time=datetime.fromtimestamp(time.time()), speed=0.0):
@@ -59,9 +63,8 @@ def generate_GPX(points, trk_name="exercise"):
                 'xmlns:vptm="http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1"' ,
                 'xmlns:ctx="http://www.garmin.com/xmlschemas/CreationTimeExtension/v1"' ,
                 'xmlns:gpxacc="http://www.garmin.com/xmlschemas/AccelerationExtension/v1"',
-        'xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1"',
-        'xmlns:vidx1="http://www.garmin.com/xmlschemas/VideoExtension/v1"',
-
+                'xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1"',
+                'xmlns:vidx1="http://www.garmin.com/xmlschemas/VideoExtension/v1"',
                 'creator="Garmin Desktop App"' ,
                 'version="1.1"' ,
                 'xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/WaypointExtension/v1 http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v2 http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/ActivityExtension/v1 http://www8.garmin.com/xmlschemas/ActivityExtensionv1.xsd http://www.garmin.com/xmlschemas/AdventuresExtensions/v1 http://www8.garmin.com/xmlschemas/AdventuresExtensionv1.xsd http://www.garmin.com/xmlschemas/PressureExtension/v1 http://www.garmin.com/xmlschemas/PressureExtensionv1.xsd http://www.garmin.com/xmlschemas/TripExtensions/v1 http://www.garmin.com/xmlschemas/TripExtensionsv1.xsd http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1 http://www.garmin.com/xmlschemas/TripMetaDataExtensionsv1.xsd http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1 http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensionsv1.xsd http://www.garmin.com/xmlschemas/CreationTimeExtension/v1 http://www.garmin.com/xmlschemas/CreationTimeExtensionsv1.xsd http://www.garmin.com/xmlschemas/AccelerationExtension/v1 http://www.garmin.com/xmlschemas/AccelerationExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.garmin.com/xmlschemas/VideoExtension/v1 http://www.garmin.com/xmlschemas/VideoExtensionv1.xsd"'
@@ -74,7 +77,6 @@ def generate_GPX(points, trk_name="exercise"):
     # <gpxtpx:distance>0</gpxtpx:distance>
 
     xml += "<gpx " + " ".join(gpx_attr) + ">\r\n"
-
     xml += "<metadata>\r\n"
     xml += "  <time>%s</time>\r\n" % UTCTime(points[0].time) # first point !
     xml += "</metadata>\r\n"
@@ -123,13 +125,10 @@ def generate_GPX(points, trk_name="exercise"):
     return xml
 
 
-
 def generate_KML(gps_points):
     """
-    
     use this for color
     http://www.zonums.com/gmaps/kml_color/
-
     """
 
     kml_template = """<?xml version="1.0" encoding="UTF-8"?>
@@ -162,7 +161,6 @@ def generate_KML(gps_points):
     </kml>
     """
 
-    
     lines = []
     for p in gps_points:
         s = "%s,%s,%s" % (p.longitude, p.latitude, p.elevation)
@@ -170,4 +168,5 @@ def generate_KML(gps_points):
 
     coords = os.linesep.join(lines)
     kml = kml_template % coords
-    return(kml)
+
+    return kml

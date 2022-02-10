@@ -1,14 +1,18 @@
-"""
-GoPro Highlight Parser:  https://github.com/icegoogles/GoPro-Highlight-Parser
+#
+# 02/10/2022
+# Chris Auron  <chris.auron@gmail.com>
+# https://github.com/imaplt/gopro-highlights
+#
+# Based on the info from:
+# https://github.com/icegoogles/GoPro-Highlight-Parser
+# https://www.kaggle.com/humananalog/examine-mp4-files-with-python-only
+#
+# Released under GNU GENERAL PUBLIC LICENSE v3. (Use at your own risk)
+#
 
-The code for extracting the mp4 boxes/atoms is from 'Human Analog' (https://www.kaggle.com/humananalog):
-https://www.kaggle.com/humananalog/examine-mp4-files-with-python-only
-
-"""
-
-import os, sys
+import os
+import sys
 import struct
-import numpy as np
 from math import floor
 import gopro2gpx.klvdata as KLVData
 

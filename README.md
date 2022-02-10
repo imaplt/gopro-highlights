@@ -1,10 +1,9 @@
-# About gopro2gpx
+# About gopro-highlights
+
+This is based on gopro2gpx code and highlights
 
 Python script that parses the gpmd stream for GOPRO moov track (MP4) and extract the GPS info into a GPX (and kml) file.  
 
-Tested on a GoPro7, but it should work on any camera above the GoPro5.  
-
-Tested on Windows7 and MacOS Sierra. 
 
 I always like to print some additional info overlaying my action videos. These overlays will show data about speed, elevation, 
 gps info, and so on. I started a project wrotten on python 2.7 that works fine. gets a `gpx` track file, a `mp4` file and some
@@ -33,7 +32,7 @@ My idea is process the file in python, extract the data, and build a file in a k
 ```
 pip install git+https://github.com/juanmcasillas/gopro2gpx
 ```
-   b) *Or* Download the repository, unpack it and instal with
+   b) *Or* Download the repository, unpack it and install with
 ```
 python setup.py install
 ```

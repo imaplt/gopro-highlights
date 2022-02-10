@@ -127,7 +127,9 @@ def BuildGPSPoints(data, skip=False):
     print("--------------------------")
     return(points)
 
+
 def parseArgs():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="count")
     parser.add_argument("-b", "--binary", help="read data from bin file", action="store_true")
@@ -139,6 +141,7 @@ def parseArgs():
     return args
 
 def main():
+
     args = parseArgs()
     _config = config.setup_environment(args)
     parser = gpmf.Parser(_config)

@@ -1,6 +1,11 @@
-import gopro2gpx
-import parser
+#
+# 02/10/2022
+# Chris Auron  <chris.auron@gmail.com>
+# https://github.com/imaplt/gopro-highlights
+#
+
 import sys
+import os
 import gopro2gpx.config as config
 import gopro2gpx.gpmf as gpmf
 import gopro2gpx.fourCC as fourCC
@@ -8,8 +13,11 @@ import gopro2gpx.gpshelper as gpshelper
 import argparse
 from datetime import datetime
 import time
+import highlights
+
 
 def parseArgs():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="count")
     parser.add_argument("-b", "--binary", help="read data from bin file", action="store_true")
@@ -85,7 +93,6 @@ def BuildGPSPoints(data, skip=False):
             if data[0] != 0 and data[1] != 0:
                 SYST = fourCC.SYSTData._make(data)
 
-
         elif d.fourCC == 'GPRI':
             # KARMA GPRI info
 
@@ -121,27 +128,82 @@ def BuildGPSPoints(data, skip=False):
     print("--------------------------")
     return (points)
 
-args = parseArgs()
-_config = config.setup_environment(args)
-parser = gpmf.Parser(_config)
 
-if not args.binary:
-    data = parser.readFromMP4()
-else:
-    data = parser.readFromBinary()
+if __name__ == "__main__":
 
-# build some funky tracks from camera GPS
+    args = parseArgs()
 
-points = BuildGPSPoints(data, skip=args.skip)
+    _config = config.setup_environment(args)
+    parser = gpmf.Parser(_config)
 
-if len(points) == 0:
-    print("Can't create file. No GPS info in %s. Exiting" % args.file)
-    sys.exit(0)
+    if not args.binary:
+        data = parser.readFromMP4()
+    else:
+        data = parser.readFromBinary()
 
-kml = gpshelper.generate_KML(points)
-with open("%s.kml" % args.outputfile, "w+") as fd:
-    fd.write(kml)
+    # //////////////
+    filename = None  # You can enter a custom filename here istead of 'None'. Otherwise just drag and drop a file on this script
+    # //////////////
 
-gpx = gpshelper.generate_GPX(points, trk_name="gopro7-track")
-with open("%s.gpx" % args.outputfile, "w+") as fd:
-    fd.write(gpx)
+    if filename is None:
+        fNames = []
+        try:
+            counter = 1
+            while True:
+                try:
+                    fNames.append(sys.argv[counter])
+                except IndexError:
+                    if counter > 1:  # at least one file found
+                        break
+                    else:
+                        _ = sys.argv[counter]  # no file found => create IndexError
+                counter += 1
+        except IndexError:
+            # Print error and exit after next userinput
+            print(
+                ("\nERROR: No file selected. Please drag the chosen file onto this script to parse for highlights.\n" +
+                 "\tOr change \"filename = None\" with the filename in the sourcecode."))
+            os.system("pause")
+            exit()
+    else:
+        fNames = [filename]
+    str2insert = ""
+
+    for fName in fNames:
+        str2insert += fName + "\n"
+        highlights = highlights.examine_mp4(fName)  # examine each file
+
+        # highlights.sort()
+
+        for i, highl in enumerate(highlights):
+            str2insert += "(" + str(i + 1) + "): "
+            str2insert += sec2dtime(highl) + "\n"
+
+        str2insert += "\n"
+
+    # Create document
+    stripPath, _ = os.path.splitext(fNames[0])
+    outpFold, newFName = os.path.split(stripPath)
+
+    newPath = os.path.join(outpFold, 'GP-Highlights_' + newFName + '.txt')
+
+    with open(newPath, "w") as f:
+        f.write(str2insert)
+
+    print("Saved Highlights under: \"" + newPath + "\"")
+
+    points = BuildGPSPoints(data, skip=args.skip)
+
+    if len(points) == 0:
+        print("Can't create file. No GPS info in %s. Exiting" % args.file)
+        sys.exit(0)
+
+    kml = gpshelper.generate_KML(points)
+    with open("%s.kml" % args.outputfile, "w+") as fd:
+        fd.write(kml)
+
+    gpx = gpshelper.generate_GPX(points, trk_name="gopro7-track")
+    with open("%s.gpx" % args.outputfile, "w+") as fd:
+        fd.write(gpx)
+
+
