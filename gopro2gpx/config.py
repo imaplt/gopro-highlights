@@ -9,7 +9,7 @@
 import os
 import configparser
 import platform
-import sys
+# import sys
 
 class Config:
     def __init__(self, ffmpeg, ffprobe):

@@ -40,11 +40,13 @@ class FFMpegTools:
         output = self.runCmd(self.config.ffprobe_cmd, [fname])
         # Stream #0:3(eng): Data: bin_data (gpmd / 0x646D7067), 29 kb/s (default)
         # Stream #0:2(eng): Data: none (gpmd / 0x646D7067), 29 kb/s (default)
-        reg = re.compile('Stream #\d:(\d)\(.+\): Data: \w+ \(gpmd', flags=re.I|re.M)
+        output = 'Stream #0:3(eng): Data: bin_data (gpmd / 0x646D7067), 95 kb/s (default)'
+        reg = re.compile('Stream #\d:(\d)\(.+\): Data: \w+ \(gpmd', flags=re.I | re.M)
         m = reg.search(output)
-        
+
         if not m:
             return(None)
+
         return(int(m.group(1)), m.group(0))
 
     def getMetadata(self, track, fname):

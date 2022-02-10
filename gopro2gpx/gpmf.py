@@ -17,14 +17,13 @@ import os
 import struct
 import sys
 
-from .ffmpegtools import FFMpegTools
-from .klvdata import KLVData
-
+import gopro2gpx.klvdata as KLVData
+import gopro2gpx.ffmpegtools as FFMpegTools
 
 class Parser:
     def __init__(self, config):
         self.config = config
-        self.ffmtools = FFMpegTools(self.config)
+        self.ffmtools = FFMpegTools.FFMpegTools(self.config)
 
         # map some handy shortcuts
         self.verbose = config.verbose
@@ -94,7 +93,7 @@ class Parser:
 
         while offset < len(data):
 
-            klv = KLVData(data,offset)
+            klv = KLVData.KLVData(data,offset)
             if not klv.skip():
                 klvlist.append(klv)
                 if self.verbose == 3:

@@ -8,7 +8,7 @@
 
 import struct
 
-from . import fourCC
+import gopro2gpx.fourCC as fourCC
 
 
 class KLVData:
@@ -51,7 +51,7 @@ class KLVData:
         s = "fourCC=%s type=%s size=%d repeat=%s data={%s} raws=|%s| raw=[%s]" % (self.fourCC, stype, self.size, self.repeat, self.data, rawdatas, rawdata)
         return(s)
 
-    def pad(self,n, base=4):
+    def pad(self, n, base=4):
         "padd the number so is % base == 0"
         i = n
         while i%base != 0:

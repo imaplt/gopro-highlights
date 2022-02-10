@@ -10,7 +10,7 @@
 import struct
 import time
 import collections
-import copy
+# import copy
 
 maptype = { 'c': 'c',
 			'L': 'L',
@@ -21,7 +21,8 @@ maptype = { 'c': 'c',
 			'l': 'l',
 			'B': 'B',
 			'f': 'f',
-			'J': 'Q'
+			'J': 'Q',
+			'F': 'c'	#32-bit four character key
 	}
 
   
@@ -38,7 +39,9 @@ KARMAUNIT10Data = collections.namedtuple("KARMAUNIT10Data","A  Ah J degC V1 V2 V
 KARMAUNIT15Data = collections.namedtuple("KARMAUNIT15Data","A  Ah J degC V1 V2 V3 V4 s p1 e1 e2 e3 e4 p2")
 GPSData = collections.namedtuple("GPSData","lat lon alt speed speed3d")
 KARMAGPSData = collections.namedtuple("KARMAGPSData", "tstamp lat lon alt speed speed3d unk1 unk2 unk3 unk4")
+HighlightsData = collections.namedtuple("HighlightsData", "time timein timeout lat lon alt type confidence score")
 SYSTData = collections.namedtuple("SYSTData", "seconds miliseconds")
+
 
 class LabelBase:
 	def __init__(self):
@@ -61,6 +64,7 @@ class LabelEmpty(LabelBase):
 			return None
 		return klvdata.rawdata[0:10]
 
+
 class Label_TypecString(LabelBase):
 	"c 1 X"
 	def __init__(self):
@@ -68,6 +72,7 @@ class Label_TypecString(LabelBase):
 
 	def Build(self, klvdata):
 		return(klvdata.rawdata.decode('utf-8', errors='replace').strip('\0'))
+
 
 class Label_TypeUTimeStamp(LabelBase):
 	"c 1 X"
@@ -80,25 +85,31 @@ class Label_TypeUTimeStamp(LabelBase):
 		fmt = '%y%m%d%H%M%S.%f'
 		return time.strptime(s, fmt)
 
+
 class LabelDVID(LabelBase):
 	def __init__(self):
 		LabelBase.__init__(self)
-	
+
+
 class LabelTSMP(LabelBase):
 	def __init__(self):
 		LabelBase.__init__(self)
+
 
 class LabelDVNM(Label_TypecString):
 	def __init__(self):
 		Label_TypecString.__init__(self)
 
+
 class LabelSTNM(Label_TypecString):
 	def __init__(self):
 		Label_TypecString.__init__(self)
 
+
 class LabelSIUN(Label_TypecString):
 	def __init__(self):
 		Label_TypecString.__init__(self)
+
 
 class LabelSCAL(LabelBase):
 	def __init__(self):
@@ -119,6 +130,7 @@ class LabelSCAL(LabelBase):
 		data = s.unpack_from(klvdata.rawdata)
 		return(data)
 
+
 class LabelXYZData(LabelBase):
 	def __init__(self):
 		LabelBase.__init__(self)
@@ -133,6 +145,7 @@ class LabelXYZData(LabelBase):
 		data = XYZData._make(s.unpack_from(klvdata.rawdata))
 		return(data)
 
+
 class LabelACCL(LabelXYZData):
 	"""
 	3-axis accelerometer 200Hz, m/s2
@@ -142,6 +155,7 @@ class LabelACCL(LabelXYZData):
 	def __init__(self):
 		LabelXYZData.__init__(self)
 
+
 class LabelGYRO(LabelXYZData):
 	"""
 	3-axis gyroscope 3200Hz, rad/s
@@ -150,6 +164,7 @@ class LabelGYRO(LabelXYZData):
 
 	def __init__(self):
 		LabelXYZData.__init__(self)
+
 
 class LabelGPSF(LabelBase):
 	"""
@@ -163,6 +178,7 @@ class LabelGPSF(LabelBase):
 
 	def __init__(self):
 		LabelBase.__init__(self)
+
 
 class LabelGPSU(Label_TypeUTimeStamp):
 	"""
@@ -206,13 +222,13 @@ class LabelUNIT(LabelBase):
 			data = None
 		return(data)
 
+
 class LabelGPS5(LabelBase):
 	def __init__(self):
 		LabelBase.__init__(self)
 
 	def Build(self, klvdata):
 		# we need to check the REPEAT command.
-		
 		# 5 fields of length 4 (l) x repeat
 
 		if not klvdata.rawdata:
@@ -226,6 +242,7 @@ class LabelGPS5(LabelBase):
 				data_item = GPSData._make( s.unpack_from(klvdata.rawdata[r*4*5:(r+1)*4*5]) )
 				data.append(data_item)
 		return(data)
+
 
 class LabelGPRI(LabelBase):
 	def __init__(self):
@@ -254,6 +271,39 @@ class LabelGPRI(LabelBase):
 			data = KARMAGPSData._make( data_tuple )
 		return(data)
 
+
+class LabelHLMT(LabelBase):
+
+	def __init__(self):
+		LabelBase.__init__(self)
+
+	def Build(self, klvdata):
+		"""
+		Highlights are stored in this way, using a complex type:
+		struct: Time (ms), in (ms), out (ms), Location XYZ (deg,deg,m), Type, Confidence (%) Score
+		SCAL: [1, 1, 1, 10000000, 10000000, 1, 1, 1, 1]
+
+		"""
+		hlmt_type = 'LLLllf4Fff'
+		s_hlmt_type = "".join([map_type(ord(x)) for x in hlmt_type])
+
+		# we need to check the REPEAT command. Length 36 (l) x repeat
+
+		if not klvdata.rawdata:
+			# empty point
+			data = [GPSData(0, 0, 0, 0, 0)]
+		else:
+			data = []
+			for r in range(klvdata.repeat):
+				s = struct.Struct(">" + s_hlmt_type)
+				temp_tuple = s.unpack_from(klvdata.rawdata[r*36:(r+1)*36])
+				# Remove the four separate bytes of the TYPE and concatenate
+				data_tuple = temp_tuple[:6] + ('MANL',) + temp_tuple[10:]
+				data_item = HighlightsData._make(data_tuple)
+				data.append(data_item)
+		return(data)
+
+
 class LabelSYST(LabelBase):
 	"""
 	UTC time and data from GPS, 1Hz n/a
@@ -281,14 +331,17 @@ class LabelSYST(LabelBase):
 			data = SYSTData._make( data_tuple )
 		return(data)
 
+
 class LabelTMPC(LabelBase):
 	def __init__(self):
 		LabelBase.__init__(self)
 
+
 skip_labels = [ 
 	#"TIMO", "YAVG", "ISOE", "FACE", "SHUT", "WBAL", "WRGB", "UNIF", "FCNM", 
-	#"FWVS", "KBAT", "ATTD",	"GLPI",	"VFRH",	"BPOS",	"ATTR",	"SIMU",	"ESCS",	"SCPR",	"LNED",	"CYTS",	"CSEN" 
+	#"FWVS", "KBAT", "ATTD", "GLPI",	"VFRH",	"BPOS",	"ATTR",	"SIMU",	"ESCS",	"SCPR",	"LNED",	"CYTS",	"CSEN"
 ]
+
 
 labels = {
 		"ACCL" : LabelACCL,
@@ -329,7 +382,7 @@ labels = {
 		"ORIN" : Label_TypecString,
 		"ALLD" : LabelEmpty,
 		"ORIO" : Label_TypecString,
-  
+
 		#gopro8 fix
         "GPSA" : LabelEmpty, ## Unknown GPS data        ## New for Hero8?
         "IORI" : LabelEmpty, ## Image Orientation       ## New for Hero8?        
@@ -380,11 +433,54 @@ labels = {
 		"VPTS" : LabelEmpty,
 
 		# gopro MAX  fix
-		"CORI": LabelEmpty,  # Camera ORIentation
-		"IORI": LabelEmpty,  # Image ORIentation
-		"GRAV": LabelEmpty,  # GRAvity Vector
-		"DISP": LabelEmpty  # Disparity track (360 modes)
+		"CORI": LabelEmpty,  # Camera Orientation
+		"IORI": LabelEmpty,  # Image Orientation
+		"GRAV": LabelEmpty,  # Gravity Vector
+		"DISP": LabelEmpty,  # Disparity track (360 modes)
+
+		# Highlights Fix
+		"HLMT":	LabelHLMT,
+		"RMRK": LabelEmpty,
+
+		# Header Fix
+		"VERS" : LabelEmpty,
+		"FMWR" : LabelEmpty,
+		"LINF" : LabelEmpty,
+		"CINF" : LabelEmpty,
+		"CASN" : LabelEmpty,
+		"MINF" : LabelEmpty,
+		"MUID" : LabelEmpty,
+		"CMOD" : LabelEmpty,
+		"MTYP" : LabelEmpty,
+		"OREN" : LabelEmpty,
+		"DZOM" : LabelEmpty,
+		"DZST" : LabelEmpty,
+		"SMTR" : LabelEmpty,
+		"PRTN" : LabelEmpty,
+		"PTWB" : LabelEmpty,
+		"PTSH" : LabelEmpty,
+		"PTCL" : LabelEmpty,
+		"EXPT" : LabelEmpty,
+		"PIMX" : LabelEmpty,
+		"PIMN" : LabelEmpty,
+		"PTEV" : LabelEmpty,
+		"RATE" : LabelEmpty,
+		"ZFOV" : LabelEmpty,
+		"VLTE" : LabelEmpty,
+		"VLTA" : LabelEmpty,
+		"EISA" : LabelEmpty,
+		"AUPT" : LabelEmpty,
+		"AUDO" : LabelEmpty,
+		"BROD" : LabelEmpty,
+		"PMOD" : LabelEmpty,
+		"PVUL" : LabelEmpty,
+		"PRJT" : LabelEmpty,
+		"SOFF" : LabelEmpty,
+		"EISE" : LabelEmpty,
+		"BRID" : LabelEmpty
+
 }
+
 
 def Manage(klvdata):
 	if klvdata.fourCC in labels.keys():
