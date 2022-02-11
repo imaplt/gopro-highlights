@@ -42,7 +42,8 @@ def UTCTime(timedata):
     
     return timedata.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def generate_GPX(points, trk_name="exercise"):
+
+def generate_GPX(points, highlights, trk_name="exercise"):
 
     """
     Creates a GPX in 1.1 Format
@@ -70,12 +71,6 @@ def generate_GPX(points, trk_name="exercise"):
                 'xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/WaypointExtension/v1 http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v2 http://www.garmin.com/xmlschemas/TrackPointExtensionv2.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/ActivityExtension/v1 http://www8.garmin.com/xmlschemas/ActivityExtensionv1.xsd http://www.garmin.com/xmlschemas/AdventuresExtensions/v1 http://www8.garmin.com/xmlschemas/AdventuresExtensionv1.xsd http://www.garmin.com/xmlschemas/PressureExtension/v1 http://www.garmin.com/xmlschemas/PressureExtensionv1.xsd http://www.garmin.com/xmlschemas/TripExtensions/v1 http://www.garmin.com/xmlschemas/TripExtensionsv1.xsd http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1 http://www.garmin.com/xmlschemas/TripMetaDataExtensionsv1.xsd http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1 http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensionsv1.xsd http://www.garmin.com/xmlschemas/CreationTimeExtension/v1 http://www.garmin.com/xmlschemas/CreationTimeExtensionsv1.xsd http://www.garmin.com/xmlschemas/AccelerationExtension/v1 http://www.garmin.com/xmlschemas/AccelerationExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.garmin.com/xmlschemas/VideoExtension/v1 http://www.garmin.com/xmlschemas/VideoExtensionv1.xsd"'
                 ]
 
-  	# BASECAMP:
-  	# - doesn't support hr=0
-  	# - doesn't support tags:
-  	# <gpxtpx:speed>1.0</gpxtpx:speed>
-    # <gpxtpx:distance>0</gpxtpx:distance>
-
     xml += "<gpx " + " ".join(gpx_attr) + ">\r\n"
     xml += "<metadata>\r\n"
     xml += "  <time>%s</time>\r\n" % UTCTime(points[0].time) # first point !
@@ -85,9 +80,25 @@ def generate_GPX(points, trk_name="exercise"):
     xml += "<trkseg>\r\n"
 
     #
+    # add the waypoints
+    #
+    # <wpt lat="35.08385022495187" lon="-89.86411929130556">
+    #     <ele>86.2</ele>
+    #     <name>First Waypoint</name>
+    #     <cmt>First Waypoint</cmt>
+    #     <desc>First Item Waypoint</desc>
+    #     <sym>Flag, Red</sym>
+    # </wpt>
+
+    for wpt in highlights:
+        way_pts = ' <wpt lat="%s" lon="%s">\r\n' % (wpt[2], wpt[1])
+        # way_pts += '        <ele>%s</ele>\r\n' % p.elevation
+        # way_pts += '        <time>%s</time>\r\n' % UTCTime(p.time)
+        way_pts += '    </wpt>\r\n'
+        xml += way_pts
+    #
     # add the points
     #
-
     #  <trkpt lat="40.327363333" lon="-3.760243333">
     #    <time>2014-06-26T18:40:45Z</time>
     #    <fix>2d</fix>
@@ -125,7 +136,7 @@ def generate_GPX(points, trk_name="exercise"):
     return xml
 
 
-def generate_KML(gps_points):
+def generate_KML(gps_points, highlights):
     """
     use this for color
     http://www.zonums.com/gmaps/kml_color/

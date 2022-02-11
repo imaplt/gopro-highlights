@@ -8,21 +8,10 @@
 #
 
 
-import argparse
-import array
-import os
-import platform
-import re
-import struct
-import subprocess
-import sys
 import time
-from collections import namedtuple
 from datetime import datetime
-import config
-import fourCC
-import gpmf
-import gpshelper
+import gopro2gpx.fourCC as fourCC
+import gopro2gpx.gpshelper as gpshelper
 
 
 def BuildGPSPoints(data, skip=False):
@@ -113,9 +102,6 @@ def BuildGPSPoints(data, skip=False):
                 points.append(p)
                 stats['ok'] += 1
 
-
-
-
     print("-- stats -----------------")
     total_points =0
     for i in stats.keys():
@@ -125,47 +111,4 @@ def BuildGPSPoints(data, skip=False):
     print("- Empty (No data): %5d" % stats['empty'])
     print("Total points:      %5d" % total_points)
     print("--------------------------")
-    return(points)
-
-
-def parseArgs():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="count")
-    parser.add_argument("-b", "--binary", help="read data from bin file", action="store_true")
-    parser.add_argument("-s", "--skip", help="Skip bad points (GPSFIX=0)", action="store_true", default=False)
-    parser.add_argument("file", help="Video file or binary metadata dump")
-    parser.add_argument("outputfile", help="output file. builds KML and GPX")
-    args = parser.parse_args()
-
-    return args
-
-def main():
-
-    args = parseArgs()
-    _config = config.setup_environment(args)
-    parser = gpmf.Parser(_config)
-
-    if not args.binary:
-        data = parser.readFromMP4()
-    else:
-        data = parser.readFromBinary()
-
-    # build some funky tracks from camera GPS
-
-    points = BuildGPSPoints(data, skip=args.skip)
-
-    if len(points) == 0:
-        print("Can't create file. No GPS info in %s. Exiting" % args.file)
-        sys.exit(0)
-
-    kml = gpshelper.generate_KML(points)
-    with open("%s.kml" % args.outputfile , "w+") as fd:
-        fd.write(kml)
-
-    gpx = gpshelper.generate_GPX(points, trk_name="gopro7-track")
-    with open("%s.gpx" % args.outputfile , "w+") as fd:
-        fd.write(gpx)
-
-if __name__ == "__main__":
-    main()
+    return points

@@ -59,8 +59,10 @@ def examine_mp4(filename):
         moov_boxes = find_boxes(f, boxes[b"moov"][0] + 8, boxes[b"moov"][1])
         udta_boxes = find_boxes(f, moov_boxes[b"udta"][0] + 8, moov_boxes[b"udta"][1])
 
-        ### get GPMF Box
-        highlights = parse_highlights(f, udta_boxes[b'GPMF'][0] + 8, udta_boxes[b'GPMF'][1])
+        # get KLVs from GPMF Box
+        klvs = parse_klvs(f, udta_boxes[b'GPMF'][0] + 8, udta_boxes[b'GPMF'][1])
+
+        highlights = parse_highlights(klvs)
 
         print("")
         print("Filename:", filename)
@@ -70,7 +72,7 @@ def examine_mp4(filename):
         return highlights
 
 
-def parse_highlights(f, start_offset=0, end_offset=float("inf")):
+def parse_klvs(f, start_offset=0, end_offset=float("inf")):
 
     f.seek(start_offset)
     read_length = end_offset - start_offset
@@ -136,6 +138,22 @@ def parse_highlights(f, start_offset=0, end_offset=float("inf")):
     # return np.array(listOfHighlights) / 1000  # convert to seconds and return
 
 
+def parse_highlights(klvs): # Parse the highlights from the KLVs
+
+    # This returns a highlight in the form of:
+    # HighlightsData(time=1534, timein=1534, timeout=1534, lat=-898688584, lon=350812622, alt=52.321998596191406,
+    # type='MANL', confidence=100.0, score=100.0)
+    # The scale for the highlight data is: "SCAL": [1, 1, 1, 10000000, 10000000, 1, 1, 1, 1]
+    # Elements are:  Time (ms), in (ms), out (ms), Location XYZ (deg,deg,m), Type, Confidence (%) Score
+    highlight_klvs = klvs[74].data
+    highlights = []
+    for hlght in highlight_klvs:
+        print(hlght)
+        highlights.append([sec2dtime(hlght.time/1000), hlght.lat/10000000, hlght.lon/10000000, hlght.alt])
+
+    return highlights
+
+
 def sec2dtime(secs):
     """converts seconds to datetimeformat"""
     milsec = (secs - floor(secs)) * 1000
@@ -146,64 +164,3 @@ def sec2dtime(secs):
     secs %= 60
 
     return "%d:%02d:%02d.%03d" % (hour, min, secs, milsec)
-
-
-# Main
-if __name__ == '__main__':
-
-    # //////////////
-    filename = None  # You can enter a custom filename here istead of 'None'. Otherwise just drag and drop a file on this script
-    # //////////////
-
-    if filename is None:
-
-        fNames = []
-
-        try:
-            counter = 1
-            while True:
-                try:
-                    fNames.append(sys.argv[counter])
-                except IndexError:
-                    if counter > 1:  # at least one file found
-                        break
-                    else:
-                        _ = sys.argv[counter]  # no file found => create IndexError
-                counter += 1
-
-        except IndexError:
-            # Print error and exit after next userinput
-            print(
-                ("\nERROR: No file selected. Please drag the chosen file onto this script to parse for highlights.\n" +
-                 "\tOr change \"filename = None\" with the filename in the sourcecode."))
-            os.system("pause")
-            exit()
-    else:
-        fNames = [filename]
-
-    str2insert = ""
-
-    for fName in fNames:
-
-        str2insert += fName + "\n"
-
-        highlights = examine_mp4(fName)  # examine each file
-
-        # highlights.sort()
-
-        for i, highl in enumerate(highlights):
-            str2insert += "(" + str(i + 1) + "): "
-            str2insert += sec2dtime(highl) + "\n"
-
-        str2insert += "\n"
-
-    # Create document
-    stripPath, _ = os.path.splitext(fNames[0])
-    outpFold, newFName = os.path.split(stripPath)
-
-    newPath = os.path.join(outpFold, 'GP-Highlights_' + newFName + '.txt')
-
-    with open(newPath, "w") as f:
-        f.write(str2insert)
-
-    print("Saved Highlights under: \"" + newPath + "\"")
